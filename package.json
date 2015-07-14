@@ -1,0 +1,25 @@
+{
+  "name": "messaging.sproutup.co",
+  "version": "1.0.0",
+  "description": "Sendgrid interface to add, delete, and get emails from a list",
+  "main": "sendgrid.js",
+  "scripts": {
+    "test": "./node_modules/.bin/jasmine-node spec",
+    "start": "node sendgrid.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sproutup/messaging.sproutup.co.git"
+  },
+  "author": "Apurv Sethi",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/sproutup/messaging.sproutup.co/issues"
+  },
+  "homepage": "https://github.com/sproutup/messaging.sproutup.co",
+  "dependencies": {
+    "express": "^4.13.1",
+    "jasmine-node": "1.14.5",
+    "request": "^2.58.0"
+  }
+}
