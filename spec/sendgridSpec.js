@@ -1,24 +1,24 @@
 var request = require('request');
 
-var base_url = 'http://localhost:3000/';
-var add_base_url = base_url + 'addEmail/';
-var delete_base_url = base_url + 'deleteEmail/';
-var list_base_url = base_url + 'listEmails/';
-
-var badList = 'invalidListName';
-var testList = 'sendgridTest';
-var testColumn = 'Name';
-
-var badEmail = 'invalidEmail';
-var testEmail1 = 'validEmail@gmail.com';
-var testEmail2 = 'goodEmail@gmail.com';
-
-var testName1 = 'Valid Name';
-var testName2 = 'Good Name';
-
 describe('Sendgrid Server', function() {
     var Sendgrid = require('../src/sendgrid');
     var sendgrid;
+
+    var base_url = 'http://localhost:3000/';
+    var add_base_url = base_url + 'addEmail/';
+    var delete_base_url = base_url + 'deleteEmail/';
+    var list_base_url = base_url + 'listEmails/';
+
+    var badList = 'invalidListName';
+    var testList = 'sendgridTest';
+    var testColumn = 'Name';
+
+    var badEmail = 'invalidEmail';
+    var testEmail1 = 'validEmail@gmail.com';
+    var testEmail2 = 'goodEmail@gmail.com';
+
+    var testName1 = 'Valid Name';
+    var testName2 = 'Good Name';
 
     it("test list made", function(done) {
         addListUrl = base_url + 'addList/' + testList + '/' + testColumn;
