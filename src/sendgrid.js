@@ -1,9 +1,10 @@
 var express = require('express');
 var app = express();
 var request = require('request');
+var config = require('../config');
 
-var userName = 'sproutup';
-var password = '1nter$Tellar';
+var userName = config.sendgrid.username;
+var password = config.sendgrid.password;
 
 app.get('/', function (req, res) {
     res.send('Sendgrid Server');
