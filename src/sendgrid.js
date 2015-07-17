@@ -6,40 +6,6 @@ var config = require('../config');
 var userName = config.sendgrid.username;
 var password = config.sendgrid.password;
 
-app.get('/', function (req, res) {
-    res.send('Sendgrid Server');
-});
-
-app.get('/addList/:listName/:columnName', function (req, res) {
-    addList(req.params.listName, req.params.columnName, function(err, result) {
-        res.end(result);
-    });
-});
-
-app.get('/deleteList/:listName', function (req, res) {
-    deleteList(req.params.listName, function(err, result) {
-        res.end(result);
-    });
-});
-
-app.get('/addEmail/:listName/:email/:name', function (req, res) {
-    addEmail(req.params.listName, req.params.email, req.params.name, function(err, result) {
-        res.end(result);
-    });
-});
-
-app.get('/deleteEmail/:listName/:email/:name', function (req, res) {
-    deleteEmail(req.params.listName, req.params.email, req.params.name, function(err, result) {
-        res.end(result);
-    });
-});
-
-app.get('/listEmails/:listName', function (req, res) {
-    listEmails(req.params.listName, function(err, result) {
-        res.end(result);
-    });
-});
-
 function addList(listName, columnName, callback) {
     request({
         url: 'https://api.sendgrid.com/api/newsletter/lists/add.json',
@@ -57,11 +23,13 @@ function addList(listName, columnName, callback) {
         }
         else {
             if (body == '{"message": "success"}') {
-                console.log('successful add list call');
+                console.log('Sendgrid: Successful add list call');
+                console.log(body);
                 return callback(null, body);
             }
             else {
-                console.log('unsuccessful add list call');
+                console.log('Sendgrid: Unsuccessful add list call');
+                console.log(body);
                 return callback(null, body);
             }
         }
@@ -84,11 +52,13 @@ function deleteList(listName, callback) {
         }
         else {
             if (body == '{"message": "success"}') {
-                console.log('successful delete list call');
+                console.log('Sendgrid: Successful delete list call');
+                console.log(body);
                 return callback(null, body);
             }
             else {
-                console.log('unsuccessful delete list call');
+                console.log('Sendgrid: Unsuccessful delete list call');
+                console.log(body);
                 return callback(null, body);
             }
         }
@@ -116,11 +86,13 @@ function addEmail(listName, email, name, callback) {
         }
         else {
             if (body == '{"inserted": 1}') {
-                console.log('successful add call');
+                console.log('Sendgrid: Successful add call');
+                console.log(body);
                 return callback(null, body);
             }
             else {
-                console.log('unsuccessful add call');
+                console.log('Sendgrid: Unsuccessful add call');
+                console.log(body);
                 return callback(null, body);
             }
         }
@@ -145,11 +117,13 @@ function deleteEmail(listName, email, name, callback) {
         }
         else {
             if (body == '{"removed": 1}') {
-                console.log('successful delete call');
+                console.log('Sendgrid: Successful delete call');
+                console.log(body);
                 return callback(null, body);
             }
             else {
-                console.log('unsuccessful delete call');
+                console.log('Sendgrid: Unsuccessful delete call');
+                console.log(body);
                 return callback(null, body);
             }
         }
@@ -170,19 +144,24 @@ function listEmails(listName, callback) {
         }
         else {
             if (body.search(listName) == -1) {
-                console.log('successful list call');
+                console.log('Sendgrid: Successful list call');
+                console.log(body);
                 return callback(null, body);
             }
             else {
-                console.log('unsuccessful list call');
+                console.log('Sendgrid: Unsuccessful list call');
+                console.log(body);
                 return callback(null, body);
             }
         }
     });
 };
 
-var server = app.listen(3000, function () {
-    var host = server.address().address;
-    var port = server.address().port;
-    console.log('Example app listening at http://%s:%s', host, port);
-});
+
+module.exports = {
+    addList: addList,
+    addEmail: addEmail,
+    listEmails: listEmails,
+    deleteEmail: deleteEmail,
+    deleteList: deleteList    
+};
