@@ -1,11 +1,11 @@
 {
   "name": "messaging.sproutup.co",
   "version": "1.0.0",
-  "description": "Sendgrid interface to add, delete, and get emails from a list",
-  "main": "sendgrid.js",
+  "description": "SQS/Sendgrid interface to add, delete, and get emails from a list",
+  "main": "sqsSendgrid.js",
   "scripts": {
     "test": "./node_modules/.bin/jasmine-node spec",
-    "start": "node sendgrid.js"
+    "start": "node sqsSendgrid.js"
   },
   "repository": {
     "type": "git",
@@ -21,6 +21,7 @@
     "aws-sdk": "^2.1.38",
     "express": "^4.13.1",
     "jasmine-node": "1.14.5",
+    "nock": "^2.7.0",
     "request": "^2.58.0"
   }
 }
