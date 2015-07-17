@@ -1,50 +1,18 @@
 var request = require('request');
+var nock = require('nock');
 
-describe('SQS Server', function() {
-    var Sqs = require('../src/sqs');
-    var sqs;
-
-    var queueUrl = 'https://sqs.us-east-1.amazonaws.com/772918356582/testSQS';
-
-    var base_url = 'http://localhost:4000/';
-    var initialization_url = base_url + 'initialize';
-    var push_base_url = base_url + 'push/';
-    var pull_url = base_url + 'pull';
-    var delete_base_url = base_url + 'delete/';
+describe('SQS Testing', function() {
+    var sqs = require('../src/sqs');
 
     var testMessage1 = 'validMessage';
     var testMessage2 = 'goodMessage';
     var testMessage3 = 'vtMessage';
     
-    var push_1_url = push_base_url + testMessage1;
-    var push_2_url = push_base_url + testMessage2;
-    var push_3_url = push_base_url + testMessage3;
-    
-    var pull_vt0_url = pull_url + '?vt=0';
-    
-    describe("GET /", function() {
-        
-        it("returns status code 200", function(done) {
-            request.get(base_url, function(error, response, body) {
-                expect(response.statusCode).toBe(200);
-                done();
-            });
-        });
-
-        it("returns sqs server", function(done) {
-            request.get(base_url, function(error, response, body) {
-                expect(body).toBe("SQS Server");
-                done();
-            });
-        });
-    });
-    
     describe("Ensure initialization", function() {
         
-        it("returns status code 200, queueUrl present", function(done) {
-            request.get(initialization_url, function(error, response, body) {
-                expect(response.statusCode).toBe(200);
-                expect((JSON.parse(body)).QueueUrl).not.toBe(undefined);
+        it("initialize queue, queueUrl present", function(done) {
+            sqs.initializeSQS(function(err, res) {
+                expect(res.QueueUrl).not.toBe(undefined);
                 done();
             });
         });
@@ -57,88 +25,70 @@ describe('SQS Server', function() {
         var receiptHandle1;
         var receiptHandle2;
         
-        it("push empty message status code != 200", function(done) {
-            request.get(push_base_url, function(error, response, body) {
-                expect(response.statusCode).not.toBe(200);
+        it("push message1 status causes no errors, grab messageId", function(done) {
+            sqs.pushSQS(testMessage1, function(err, res) {
+                messageId1 = res.MessageId;
+                expect(res).not.toBe('null');
                 done();
             });
         });
         
-        it("push message1 status code == 200", function(done) {
-            request.get(push_1_url, function(error, response, body) {
-                messageId1 = (JSON.parse(body)).MessageId;
-                expect(response.statusCode).toBe(200);
-                expect(body).not.toBe('null');
-                done();
-            });
-        });
-        
-        it("push message1 body: messageId exists, new", function (done) {
-            request.get(push_1_url, function(error, response, body) {
-                messageId2 = (JSON.parse(body)).MessageId;
+        it("push message1 res: messageId exists, new", function (done) {
+            sqs.pushSQS(testMessage1, function(err, res) {
+                messageId2 = res.MessageId;
                 expect(messageId2).not.toBe(undefined);
                 expect(messageId2).not.toBe(messageId1);
                 done();
             });
         });
         
-        it("pull: status code is 200", function(done) {
-            request.get(pull_url, function(error, response, body) {
-                var jsonBody = JSON.parse(body);
-                if (typeof jsonBody.Messages !== 'undefined') {
-                    receiptHandle1 = jsonBody.Messages[0].ReceiptHandle;
+        it("pull: no errors, grab receiptHandle", function(done) {
+            sqs.pullSQS(undefined, function(err, res) {
+                if (typeof res.Messages !== 'undefined') {
+                    receiptHandle1 = res.Messages[0].ReceiptHandle;
                 }
-                expect(response.statusCode).toBe(200);
-                expect(body).not.toBe('null');
+                expect(res).not.toBe('null');
                 done();
             });
         });
         
-        it("pull body: message shows message1", function(done) {
-            request.get(pull_url, function(error, response, body) {
-                var jsonBody = JSON.parse(body);
-                expect(jsonBody.Messages).not.toBe(undefined);
-                if (typeof jsonBody.Messages !== 'undefined') {
-                    expect(jsonBody.Messages[0].Body).toBe(testMessage1);
-                    receiptHandle2 = jsonBody.Messages[0].ReceiptHandle;
+        it("pull res: message shows message1", function(done) {
+            sqs.pullSQS(undefined, function(err, res) {
+                expect(res.Messages).not.toBe(undefined);
+                if (typeof res.Messages !== 'undefined') {
+                    expect(res.Messages[0].Body).toBe(testMessage1);
+                    receiptHandle2 = res.Messages[0].ReceiptHandle;
                 }
                 done();
             });
         });
         
-        it("delete past two messages, status code = 200, no err", function(done) {
-            var deleteUrl1 = delete_base_url + encodeURIComponent(receiptHandle1);
-            var deleteUrl2 = delete_base_url + encodeURIComponent(receiptHandle2);
+        it("delete past two messages, no err", function(done) {
             
-            request.get(deleteUrl1, function(error, response, body) {
-                expect(response.statusCode).toBe(200);
-                expect(body).not.toBe('null');
+            sqs.deleteSQS(receiptHandle1, function(err, res) {
+                expect(res).not.toBe('null');
                 
-                request.get(deleteUrl2, function(error, response, body) {
-                    expect(response.statusCode).toBe(200);
-                    expect(body).not.toBe('null');
+                sqs.deleteSQS(receiptHandle2, function(err, res) {
+                    expect(res).not.toBe('null');
                     done();
                 });
             });
         });
         
         it("push/pull/delete new message successfully", function(done) {
-            request.get(push_2_url, function(error, response, body) {
-                expect(response.statusCode).toBe(200);
-                expect(body).not.toBe('null');
+            sqs.pushSQS(testMessage2, function(err, res) {
+                expect(res).not.toBe('null');
                 
-                request.get(pull_url, function(error, response, body) {
-                    var deleteUrl;
-                    var jsonBody = JSON.parse(body);
-                    expect(jsonBody.Messages).not.toBe(undefined);
-                    if (typeof jsonBody.Messages !== 'undefined') {
-                        expect(jsonBody.Messages[0].Body).toBe(testMessage2);
-                        deleteUrl = delete_base_url + encodeURIComponent(jsonBody.Messages[0].ReceiptHandle);
+                sqs.pullSQS(undefined, function(err, res) {
+                    var receiptHanlde;
+                    expect(res.Messages).not.toBe(undefined);
+                    if (typeof res.Messages !== 'undefined') {
+                        expect(res.Messages[0].Body).toBe(testMessage2);
+                        receiptHandle = res.Messages[0].ReceiptHandle;
                     }
                     
-                    request.get(deleteUrl, function(error, response, body) {
-                        expect(response.statusCode).toBe(200);
-                        expect(body).not.toBe('null');
+                    sqs.deleteSQS(receiptHandle, function(err, res) {
+                        expect(res).not.toBe('null');
                         done();
                     });
                 });
@@ -146,32 +96,28 @@ describe('SQS Server', function() {
         });
         
         it("pulling with visibility timeout", function(done) {
-            request.get(push_3_url, function(error, response, body) {
-                expect(response.statusCode).toBe(200);
-                expect(body).not.toBe('null');
+            sqs.pushSQS(testMessage3, function(err, res) {
+                expect(res).not.toBe('null');
                 
-                request.get(pull_vt0_url, function(error, response, body) {
+                sqs.pullSQS(0, function(err, res1) {
                     var messageId;
-                    var jsonBody1 = JSON.parse(body);
-                    expect(jsonBody1.Messages).not.toBe(undefined);
-                    if (typeof jsonBody1.Messages !== 'undefined') {
-                        expect(jsonBody1.Messages[0].Body).toBe(testMessage3);
-                        messageId = jsonBody1.Messages[0].MessageId;
+                    expect(res1.Messages).not.toBe(undefined);
+                    if (typeof res1.Messages !== 'undefined') {
+                        expect(res1.Messages[0].Body).toBe(testMessage3);
+                        messageId = res1.Messages[0].MessageId;
                     }
                     
-                    request.get(pull_url, function(error, response, body) {
-                        var deleteUrl;
-                        var jsonBody2 = JSON.parse(body);
-                        expect(jsonBody2.Messages).not.toBe(undefined);
-                        if (typeof jsonBody2.Messages !== 'undefined') {
-                            expect(jsonBody2.Messages[0].Body).toBe(testMessage3);
-                            expect(jsonBody2.Messages[0].MessageId).toBe(messageId);
-                            deleteUrl = delete_base_url + encodeURIComponent(jsonBody2.Messages[0].ReceiptHandle);
+                    sqs.pullSQS(undefined, function(err, res2) {
+                        var receiptHandle;
+                        expect(res2.Messages).not.toBe(undefined);
+                        if (typeof res2.Messages !== 'undefined') {
+                            expect(res2.Messages[0].Body).toBe(testMessage3);
+                            expect(res2.Messages[0].MessageId).toBe(messageId);
+                            receiptHandle = res2.Messages[0].ReceiptHandle;
                         }
 
-                        request.get(deleteUrl, function(error, response, body) {
-                            expect(response.statusCode).toBe(200);
-                            expect(body).not.toBe('null');
+                        sqs.deleteSQS(receiptHandle, function(err, res) {
+                            expect(res).not.toBe('null');
                             done();
                         });
                     });
@@ -179,9 +125,9 @@ describe('SQS Server', function() {
             });
         });
         
-        it("pull body: no message to pull", function(done) {
-            request.get(pull_url, function(error, response, body) {
-                expect((JSON.parse(body)).Messages).toBe(undefined);
+        it("pull res: no message to pull", function(done) {
+            sqs.pullSQS(undefined, function(err, res) {
+                expect(res.Messages).toBe(undefined);
                 done();
             });
         });

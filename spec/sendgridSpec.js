@@ -1,13 +1,19 @@
 var request = require('request');
+var nock = require('nock');
+var config = require('../config');
 
-describe('Sendgrid Server', function() {
-    var Sendgrid = require('../src/sendgrid');
-    var sendgrid;
+describe('Sendgrid Testing', function() {
+    var sendgrid = require('../src/sendgrid');
 
-    var base_url = 'http://localhost:3000/';
-    var add_base_url = base_url + 'addEmail/';
-    var delete_base_url = base_url + 'deleteEmail/';
-    var list_base_url = base_url + 'listEmails/';
+    var sendgridUsername = 'testUsername';
+    var sendgridPassword = 'testPassword';
+    
+    var sendgrid_base_url = 'https://api.sendgrid.com';
+    var sendgrid_addList_url = '/api/newsletter/lists/add.json';
+    var sendgrid_deleteList_url = '/api/newsletter/lists/delete.json';
+    var sendgrid_addEmail_url = '/api/newsletter/lists/email/add.json';
+    var sendgrid_deleteEmail_url = '/api/newsletter/lists/email/delete.json';
+    var sendgrid_listEmails_url = '/api/newsletter/lists/email/get.json';
 
     var badList = 'invalidListName';
     var testList = 'sendgridTest';
@@ -19,280 +25,235 @@ describe('Sendgrid Server', function() {
 
     var testName1 = 'Valid Name';
     var testName2 = 'Good Name';
-
-    it("test list made", function(done) {
-        addListUrl = base_url + 'addList/' + testList + '/' + testColumn;
-        request.get(addListUrl, function(error, response, body) {
-            expect(body).toBe('{"message": "success"}');
+    
+    
+    // Long variables used multiple times, using variables declared above
+    // Using nock to mock servers with these variables
+    var empty_success = 'Sendgrid Server';
+    var addDeleteList_success = '{"message": "success"}';
+    var add_success = '{"inserted": 1}';
+    var add_failed = '{"inserted": 0}';
+    var delete_success = '{"removed": 1}';
+    var delete_failed = '{"removed": 0}';
+    var list_name_error = '{"error": "' + badList + ' does not exist"}';
+    var bad_list_call_res = '{"traceback": "\'Traceback (most recent call last)' 
+        + ':\\\\nFailure: exceptions.ValueError: ' + badList + ' does not exist' 
+        + '\\\\n\'", "error": "' + badList + ' does not exist"}';
+    var empty_list_call_res = '[]';
+    var good_list_call_res1 = '[{"email": "' + testEmail1 + '", "name": "' + testName1 + '"}]';
+    var good_list_call_res2 = '[{"email": "' + testEmail2 + '", "name": "' + testName1 + '"}]';
+    var good_list_call_res12 = '[{"email": "' + testEmail1 + '", "name": "' + testName1 + '"},' 
+        + '{"email": "' + testEmail2 + '", "name": "' + testName1 + '"}]';
+    
+    
+//    // Setting up nock testing, to be implemented
+//    var addListGood = nock(sendgrid_base_url)
+//                    .post(sendgrid_addList_url, {
+//                        'api_user': sendgridUsername,
+//                        'api_key': sendgridPassword,
+//                        'list': testList,
+//                        'name': testColumn
+//                    })
+//                    .reply(200, 'Incorrect reply');
+//    var addEmailGood1Data = {
+//        'email': testEmail1,
+//        'name': testName1
+//    };
+//    var addEmailGood1 = nock(sendgrid_base_url)
+//                    .post(sendgrid_addEmail_url, {
+//                        'api_user': sendgridUsername,
+//                        'api_key': sendgridPassword,
+//                        'list': testList,
+//                        'data': JSON.stringify(addEmailGood1Data)
+//                    })
+//                    .once()
+//                    .reply(200, add_success);
+//    var addEmailBadList = nock(sendgrid_base_url)
+//                    .post(sendgrid_addEmail_url, {
+//                        'api_user': sendgridUsername,
+//                        'api_key': sendgridPassword,
+//                        'list': badList,
+//                        'data': JSON.stringify(addGoodEmail1Data)
+//                    })
+//                    .reply(200, list_name_error);
+//    var addEmailBadEmailData = {
+//        'email': badEmail,
+//        'name': testName1
+//    };
+//    var addEmailBadEmail = nock(sendgrid_base_url)
+//                    .post(sendgrid_addEmail_url, {
+//                        'api_user': sendgridUsername,
+//                        'api_key': sendgridPassword,
+//                        'list': testList,
+//                        'data': JSON.stringify(addEmailBadEmailData)
+//                    })
+//                    .reply(200, list_name_error);
+//    var addEmailDuplicateEmailData = {
+//        'email': testEmail1,
+//        'name': testName2
+//    };
+//    var addEmailDuplicateEmail = nock(sendgrid_base_url)
+//                    .post(sendgrid_addEmail_url, {
+//                        'api_user': sendgridUsername,
+//                        'api_key': sendgridPassword,
+//                        'list': testList,
+//                        'data': JSON.stringify(addEmailDuplicateEmailData)
+//                    })
+//                    .reply(200, add_failed);
+//    var addEmailDuplicateNameData = {
+//        'email': testEmail2,
+//        'name': testName1
+//    };
+//    var addEmailDuplicateName = nock(sendgrid_base_url)
+//                    .post(sendgrid_addEmail_url, {
+//                        'api_user': sendgridUsername,
+//                        'api_key': sendgridPassword,
+//                        'list': testList,
+//                        'data': JSON.stringify(addEmailDuplicateNameData)
+//                    })
+//                    .once()
+//                    .reply(200, add_success);
+//    var deleteGoodList = nock(sendgrid_base_url)
+//                    .post(sendgrid_deleteList_url, {
+//                        'api_user': sendgridUsername,
+//                        'api_key': sendgridPassword,
+//                        'list': testList,
+//                    })
+//                    .reply(200, 'Incorrect reply');
+    
+    it("test addList", function(done) {
+        sendgrid.addList(testList, testColumn, function(err, res) {
+            expect(res).toBe(addDeleteList_success);
             done();
         });
     });
     
-    describe("GET /", function() {
+    
+    describe("test addEmail", function() {
         
-        it("returns status code 200", function(done) {
-            request.get(base_url, function(error, response, body) {
-                expect(response.statusCode).toBe(200);
+        it("valid request successful", function(done) {
+            sendgrid.addEmail(testList, testEmail1, testName1, function(err, res) {
+                expect(res).toBe(add_success);
                 done();
             });
         });
-
-        it("returns sendgrid server", function(done) {
-            request.get(base_url, function(error, response, body) {
-                expect(body).toBe("Sendgrid Server");
+        
+        it("invalid listName shows error", function(done) {
+            sendgrid.addEmail(badList, testEmail1, testName1, function(err, res) {
+                expect(res).toBe(list_name_error);
+                done();
+            });
+        });
+        it("invalid email shows unsuccessful add", function(done) {
+            sendgrid.addEmail(testList, badEmail, testName1, function(err, res) {
+                expect(res).toBe(add_failed);
+                done();
+            });
+        });
+        it("duplicate call shows unsuccessful add", function(done) {
+            sendgrid.addEmail(testList, testEmail1, testName1, function(err, res) {
+                expect(res).toBe(add_failed);
+                done();
+            });
+        });
+        it("duplicate email, valid call shows unsuccessful add", function(done) {
+            sendgrid.addEmail(testList, testEmail1, testName2, function(err, res) {
+                expect(res).toBe(add_failed);
+                done();
+            });
+        });
+        it("different email, valid call shows successful add", function(done) {
+            sendgrid.addEmail(testList, testEmail2, testName1, function(err, res) {
+                expect(res).toBe(add_success);
                 done();
             });
         });
     });
     
     
-    describe("GET /addEmail/.../.../...", function() {
-
-        var good_url = add_base_url + testList + '/' + testEmail1 + '/' + testName1;
-        var goodDuplicateEmail_url = add_base_url + testList + '/' + testEmail1 + '/' + testName2;
-        var goodDuplicateName_url = add_base_url + testList + '/' + testEmail2 + '/' + testName1;
-
-        var badList_url = add_base_url + badList + '/' + testEmail1 + '/' + testName1;
-        var noList_url = add_base_url + testEmail1 + '/' + testName1;
-        var badEmail_url = add_base_url + testList + '/' + badEmail + '/' + testName1;
-        var noEmail_url = add_base_url + testList + '/' + testName1;
-        var noName_url = add_base_url + testList + '/' + testEmail1;
-        
-        it("missing list status code != 200", function(done) {
-            request.get(noList_url, function(error, response, body) {
-                expect(response.statusCode).not.toBe(200);
-                done();
-            });
-        });
-        it("missing email status code != 200", function(done) {
-            request.get(noEmail_url, function(error, response, body) {
-                expect(response.statusCode).not.toBe(200);
-                done();
-            });
-        });
-        it("missing name status code != 200", function(done) {
-            request.get(noName_url, function(error, response, body) {
-                expect(response.statusCode).not.toBe(200);
+    describe("test deleteEmail", function() {
+        it("valid request successful", function(done) {
+            sendgrid.deleteEmail(testList, testEmail1, testName1, function(err, res) {
+                expect(res).toBe(delete_success);
                 done();
             });
         });
         
-        it("invalid listName status code == 200", function(done) {
-            request.get(badList_url, function(error, response, body) {
-                expect(response.statusCode).toBe(200);
+        it("invalid listName shows error", function(done) {
+            sendgrid.deleteEmail(badList, testEmail1, testName1, function(err, res) {
+                expect(res).toBe(list_name_error);
                 done();
             });
         });
-        it("invalid email status code == 200", function(done) {
-            request.get(badEmail_url, function(error, response, body) {
-                expect(response.statusCode).toBe(200);
+        it("invalid email shows unsuccessful remove", function(done) {
+            sendgrid.deleteEmail(testList, badEmail, testName1, function(err, res) {
+                expect(res).toBe(delete_failed);
                 done();
             });
         });
-        it("valid request status code == 200", function(done) {
-            request.get(good_url, function(error, response, body) {
-                expect(response.statusCode).toBe(200);
+        it("nonexistent email, valid call shows unsuccessful remove", function(done) {
+            sendgrid.deleteEmail(testList, testEmail1, testName1, function(err, res) {
+                expect(res).toBe(delete_failed);
                 done();
             });
         });
-        
-        it("invalid listName body shows error", function(done) {
-            request.get(badList_url, function(error, response, body) {
-                expect(body).toBe('{"error": "' + badList + ' does not exist"}');
-                done();
-            });
-        });
-        it("invalid email body shows unsuccessful add", function(done) {
-            request.get(badEmail_url, function(error, response, body) {
-                expect(body).toBe('{"inserted": 0}');
-                done();
-            });
-        });
-        it("duplicate call: body shows unsuccessful add", function(done) {
-            request.get(good_url, function(error, response, body) {
-                expect(body).toBe('{"inserted": 0}');
-                done();
-            });
-        });
-        it("duplicate email, valid call: body shows unsuccessful add", function(done) {
-            request.get(goodDuplicateEmail_url, function(error, response, body) {
-                expect(body).toBe('{"inserted": 0}');
-                done();
-            });
-        });
-        it("different email, valid call: body shows successful add", function(done) {
-            request.get(goodDuplicateName_url, function(error, response, body) {
-                expect(body).toBe('{"inserted": 1}');
+        it("existing email, valid call shows successful remove", function(done) {
+            sendgrid.deleteEmail(testList, testEmail2, testName1, function(err, res) {
+                expect(res).toBe(delete_success);
                 done();
             });
         });
     });
-    
-    
-    describe("GET /deleteEmail/.../.../...", function() {
 
-        var good_url = delete_base_url + testList + '/' + testEmail1 + '/' + testName1;
-        var goodDuplicateEmail_url = delete_base_url + testList + '/' + testEmail1 + '/' + testName2;
-        var goodDuplicateName_url = delete_base_url + testList + '/' + testEmail2 + '/' + testName1;
-
-        var badList_url = delete_base_url + badList + '/' + testEmail1 + '/' + testName1;
-        var noList_url = delete_base_url + testEmail1 + '/' + testName1;
-        var badEmail_url = delete_base_url + testList + '/' + badEmail + '/' + testName1;
-        var noEmail_url = delete_base_url + testList + '/' + testName1;
-        var noName_url = delete_base_url + testList + '/' + testEmail1;
-        
-        it("missing list: status code != 200", function(done) {
-            request.get(noList_url, function(error, response, body) {
-                expect(response.statusCode).not.toBe(200);
-                done();
-            });
-        });
-        it("missing email: status code != 200", function(done) {
-            request.get(noEmail_url, function(error, response, body) {
-                expect(response.statusCode).not.toBe(200);
-                done();
-            });
-        });
-        it("missing name: status code != 200", function(done) {
-            request.get(noName_url, function(error, response, body) {
-                expect(response.statusCode).not.toBe(200);
-                done();
-            });
-        });
-        
-        it("invalid listName: status code == 200", function(done) {
-            request.get(badList_url, function(error, response, body) {
-                expect(response.statusCode).toBe(200);
-                done();
-            });
-        });
-        it("invalid email: status code == 200", function(done) {
-            request.get(badEmail_url, function(error, response, body) {
-                expect(response.statusCode).toBe(200);
-                done();
-            });
-        });
-        it("valid request: status code == 200", function(done) {
-            request.get(good_url, function(error, response, body) {
-                expect(response.statusCode).toBe(200);
-                done();
-            });
-        });
-        
-        it("invalid listName: body shows error", function(done) {
-            request.get(badList_url, function(error, response, body) {
-                expect(body).toBe('{"error": "' + badList + ' does not exist"}');
-                done();
-            });
-        });
-        it("invalid email: body shows unsuccessful remove", function(done) {
-            request.get(badEmail_url, function(error, response, body) {
-                expect(body).toBe('{"removed": 0}');
-                done();
-            });
-        });
-        it("nonexistent email, valid call: body shows unsuccessful remove", function(done) {
-            request.get(good_url, function(error, response, body) {
-                expect(body).toBe('{"removed": 0}');
-                done();
-            });
-        });
-        it("existing email, valid call: body shows successful remove", function(done) {
-            request.get(goodDuplicateName_url, function(error, response, body) {
-                expect(body).toBe('{"removed": 1}');
-                done();
-            });
-        });
-    });
-    
-    
-describe("GET /listEmails/...", function() {
+    describe("GET /listEmails/...", function() {
         
         // Assumes nothing is in list currently
-
-        var good_url = list_base_url + testList;
-
-        var badList_url = list_base_url + badList;
-        var noList_url = list_base_url;
         
-        var addUrl1 = add_base_url + testList + '/' + testEmail1 + '/' + testName1;
-        var addUrl2 = add_base_url + testList + '/' + testEmail2 + '/' + testName1;
-        var deleteUrl1 = delete_base_url + testList + '/' + testEmail1 + '/' + testName1;
-        var deleteUrl2 = delete_base_url + testList + '/' + testEmail2 + '/' + testName1;
-        
-        var badCallResult = '{"traceback": "\'Traceback (most recent call last)' 
-            + ':\\\\nFailure: exceptions.ValueError: ' + badList + ' does not exist' 
-            + '\\\\n\'", "error": "' + badList + ' does not exist"}';
-        var goodCallResult1 = '[{"email": "' + testEmail1 + '", "name": "' + testName1 + '"}]';
-        var goodCallResult2 = '[{"email": "' + testEmail2 + '", "name": "' + testName1 + '"}]';
-        var goodCallResult12 = '[{"email": "' + testEmail1 + '", "name": "' + testName1 + '"},' 
-            + '{"email": "' + testEmail2 + '", "name": "' + testName1 + '"}]';
-        
-        it("missing list: status code != 200", function(done) {
-            request.get(noList_url, function(error, response, body) {
-                expect(response.statusCode).not.toBe(200);
+        it("invalid listName shows error", function(done) {
+            sendgrid.listEmails(badList, function(err, res) {
+                expect(res).toBe(bad_list_call_res);
+                done();
+            });
+        });
+        it("valid call shows empty array", function(done) {
+            sendgrid.listEmails(testList, function(err, res) {
+                expect(res).toBe(empty_list_call_res);
                 done();
             });
         });
         
-        it("invalid listName: status code == 200", function(done) {
-            request.get(badList_url, function(error, response, body) {
-                expect(response.statusCode).toBe(200);
-                done();
-            });
-        });
-        it("valid request: status code == 200", function(done) {
-            request.get(good_url, function(error, response, body) {
-                expect(response.statusCode).toBe(200);
-                done();
-            });
-        });
-        
-        it("invalid listName: body shows error", function(done) {
-            request.get(badList_url, function(error, response, body) {
-                expect(body).toBe(badCallResult);
-                done();
-            });
-        });
-        it("valid call: body shows empty array", function(done) {
-            request.get(good_url, function(error, response, body) {
-                expect(body).toBe('[]');
-                done();
-            });
-        });
-        
-        it("added one, valid call: body shows one element in array", function (done) {
-            request.get(addUrl1, function(error, response, body) {
-                expect(body).toBe('{"inserted": 1}');
-                request.get(good_url, function(error, response, body) {
-                    expect(body).toBe(goodCallResult1);
+        it("added one, valid call shows one element in array", function (done) {
+            sendgrid.addEmail(testList, testEmail1, testName1, function(err, res) {
+                expect(res).toBe(add_success);
+                sendgrid.listEmails(testList, function(err, res) {
+                    expect(res).toBe(good_list_call_res1);
                     done();
                 });
             });
         });
-        it("added second, valid call: body shows two elements in array", function (done) {
-            request.get(addUrl2, function(error, response, body) {
-                expect(body).toBe('{"inserted": 1}');
-                request.get(good_url, function(error, response, body) {
-                    expect(body).toBe(goodCallResult12);
+        it("added second, valid call shows two elements in array", function (done) {
+            sendgrid.addEmail(testList, testEmail2, testName1, function(err, res) {
+                expect(res).toBe(add_success);
+                sendgrid.listEmails(testList, function(err, res) {
+                    expect(res).toBe(good_list_call_res12);
                     done();
                 });
             });
         });
-        it("removed first, valid call: body shows one element in array", function(done) {
-            request.get(deleteUrl1, function(error, response, body) {
-                expect(body).toBe('{"removed": 1}');
-                request.get(good_url, function(error, response, body) {
-                    expect(body).toBe(goodCallResult2);
+        it("removed first, valid call shows one element in array", function(done) {
+            sendgrid.deleteEmail(testList, testEmail1, testName1, function(err, res) {
+                expect(res).toBe(delete_sucess);
+                sendgrid.listEmails(testList, function(err, res) {
+                    expect(res).toBe(good_list_call_res2);
                     done();
                 });
             });
         });
-        it("removed second, valid call: body shows no elements in array", function(done) {
-            request.get(deleteUrl2, function(error, response, body) {
-                expect(body).toBe('{"removed": 1}');
-                request.get(good_url, function(error, response, body) {
-                    expect(body).toBe('[]');
+        it("removed second, valid call shows no elements in array", function(done) {
+            sendgrid.deleteEmail(testList, testEmail2, testName1, function(err, res) {
+                expect(res).toBe(delete_sucess);
+                sendgrid.listEmails(testList, function(err, res) {
+                    expect(res).toBe(empty_list_call_res);
                     done();
                 });
             });
@@ -300,9 +261,8 @@ describe("GET /listEmails/...", function() {
     });
 
     it("test list deleted", function(done) {
-        deleteListUrl = base_url + 'deleteList/' + testList;
-        request.get(deleteListUrl, function(error, response, body) {
-            expect(body).toBe('{"message": "success"}');
+        sendgrid.deleteList(testList, function(err, res) {
+            expect(res).toBe(addDeleteList_success);
             done();
         });
     });
