@@ -8,8 +8,6 @@ EnvironmentTier:
   Type: Standard
 SolutionStack: 64bit Amazon Linux 2015.03 v1.4.1 running Docker 1.6.0
 OptionSettings:
-  aws:ec2:vpc:
-    AssociatePublicIpAddress: false
   aws:elasticbeanstalk:command:
     BatchSize: '30'
     BatchSizeType: Percentage
@@ -25,4 +23,5 @@ OptionSettings:
     AWS_SECRET_KEY: UHpVP/axa3eOmfCOcSQFGXwK4fzYMzHV8aYkh38X
     AWS_SECRET_ACCESS_KEY: UHpVP/axa3eOmfCOcSQFGXwK4fzYMzHV8aYkh38X
     REDISURL: redis-cluster.2yq2tv.0001.usw2.cache.amazonaws.com
-    REDISPORT: 6379
+    REDISPORT: 6379  
+
