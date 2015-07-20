@@ -1,6 +1,5 @@
 var request = require('request');
 var nock = require('nock');
-var config = require('../config');
 
 describe('Sendgrid Testing', function() {
     var sendgrid = require('../src/sendgrid');

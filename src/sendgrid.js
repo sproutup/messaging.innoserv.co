@@ -1,10 +1,9 @@
 var express = require('express');
 var app = express();
 var request = require('request');
-var config = require('../config');
 
-var userName = config.sendgrid.username;
-var password = config.sendgrid.password;
+var userName = process.env.SENDGRID_USERNAME;
+var password = process.env.SENDGRID_PASSWORD;
 
 function addList(listName, columnName, callback) {
     request({

@@ -1,12 +1,11 @@
 var express = require('express');
 var app = express();
 var aws = require('aws-sdk');
-var config = require('../config');
 
-aws.config.update({accessKeyId: config.aws.accessKey, secretAccessKey: config.aws.secretAccessKey});
-var sqs = new aws.SQS({region: config.aws.region});
+aws.config.update({accessKeyId: process.env.AWS_ACCESS_KEY_ID, secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY});
+var sqs = new aws.SQS({region: process.env.AWS_SQS_REGION});
 var queueName = {
-    QueueName: config.aws.queueName
+    QueueName: process.env.AWS_QUEUE_NAME
 };
 var sqsUrl;
 
