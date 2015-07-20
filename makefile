@@ -46,12 +46,21 @@ delete: init
 	docker rm $(application_name)
 
 local:
-	export AWS_ACCESS_KEY_ID=AKIAJM5X5NV444LJEUSA
-	export AWS_SECRET_ACCESS_KEY=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
-	export AWS_SQS_REGION=us-east-1
-	export AWS_QUEUE_NAME=testSQS
-	export SENDGRID_USERNAME=sproutup
-	export SENDGRID_PASSWORD=1nter$Tellar
+	AWS_ACCESS_KEY_ID=AKIAJM5X5NV444LJEUSA \
+	AWS_SECRET_ACCESS_KEY=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 \
+	AWS_SQS_REGION=us-east-1 \
+	AWS_QUEUE_NAME=testSQS \
+	SENDGRID_USERNAME=sproutup \
+	SENDGRID_PASSWORD=1nter$Tellar
+
+node:
+	AWS_ACCESS_KEY_ID=AKIAJM5X5NV444LJEUSA \
+	AWS_SECRET_ACCESS_KEY=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 \
+	AWS_SQS_REGION=us-east-1 \
+	AWS_QUEUE_NAME=testSQS \
+	SENDGRID_USERNAME=sproutup \
+	SENDGRID_PASSWORD=1nter$Tellar \
+	npm start
 
 config-save:
 	eb config save $(configuration) --cfg $(configuration)

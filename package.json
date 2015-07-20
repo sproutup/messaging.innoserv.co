@@ -5,7 +5,7 @@
   "main": "sqsSendgrid.js",
   "scripts": {
     "test": "./node_modules/.bin/jasmine-node spec",
-    "start": "node sqsSendgrid.js"
+    "start": "node ./src/sqsSendgrid.js"
   },
   "repository": {
     "type": "git",
