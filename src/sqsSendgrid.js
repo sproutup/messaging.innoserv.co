@@ -174,7 +174,7 @@ function deleteFromQueue(receiptHandle) {
     sqs.deleteSQS(receiptHandle, function(err, res) {
         if (err) {
             //Could not successfully delete
-            setTimeout(deleteFromQueue(receiptHandle), 5000);
+            //setTimeout(deleteFromQueue(receiptHandle), 30000);
         }
         else {
             //Successfully deleted message from queue
