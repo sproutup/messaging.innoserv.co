@@ -45,21 +45,13 @@ run:
 delete: init
 	docker rm $(application_name)
 
-local:
-	AWS_ACCESS_KEY_ID=AKIAJM5X5NV444LJEUSA \
-	AWS_SECRET_ACCESS_KEY=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 \
-	AWS_SQS_REGION=us-east-1 \
-	AWS_QUEUE_NAME=testSQS \
-	SENDGRID_USERNAME=sproutup \
-	SENDGRID_PASSWORD=1nter$Tellar
-
 node:
 	AWS_ACCESS_KEY_ID=AKIAJM5X5NV444LJEUSA \
 	AWS_SECRET_ACCESS_KEY=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 \
-	AWS_SQS_REGION=us-east-1 \
+	AWS_SQS_REGION=us-west-2 \
 	AWS_QUEUE_NAME=testSQS \
 	SENDGRID_USERNAME=sproutup \
-	SENDGRID_PASSWORD=1nter$Tellar \
+	SENDGRID_PASSWORD='1nter$$Tellar' \
 	npm start
 
 config-save:
