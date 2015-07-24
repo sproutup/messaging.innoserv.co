@@ -4,15 +4,11 @@ var sqs = require('./sqs');
 var sendgrid = require('./sendgrid');
 
 
-app.get('/', function (req, res) {
-    res.send('SQS/Sendgrid Server');
-});
+var lastCallDate = new Date();
+var lastCall = 'SQS/Sendgrid Server started up';
 
-app.get('/init', function(req, res) {
-    sqs.initializeSQS(function(err, result) {
-        pullFromQueue();
-        res.send(JSON.stringify(result, null, 3));
-    });
+app.get('/', function (req, res) {
+    res.send('Last call: ' + lastCall + ' at ' + lastCallDate.toString());
 });
 
 app.get('/pushToSendgrid', function(req, res) {
@@ -40,6 +36,8 @@ function pushToQueue(methodName, param1, param2, param3, callback) {
 function pullFromQueue() {
     sqs.pullSQS(undefined, function(recErr, recRes) {
         if(recErr) {
+            lastCall = 'Error in pulling from queue';
+            lastCallDate = new Date();
             setTimeout(pullFromQueue, 300000);
         }
         // Perform function with message, delete if done with message
@@ -47,9 +45,13 @@ function pullFromQueue() {
             var message = recRes.Messages[0];
             performAction(message, function(err, res) {
                 if (err) {
+                    lastCall = 'Error in pushing message to Sendgrid';
+                    lastCallDate = new Date();
                     // Unsuccessful sendgrid call, not deleting message
                 }
                 else {
+                    lastCall = 'Successfully pushed message to Sendgrid';
+                    lastCallDate = new Date();
                     deleteFromQueue(message.ReceiptHandle);
                 }
                 setTimeout(pullFromQueue, 0);
@@ -57,6 +59,8 @@ function pullFromQueue() {
         }
         else {
             //Unsuccessful receive call or nothing to receive
+            lastCall = 'Nothing to pull from queue';
+            lastCallDate = new Date();
             setTimeout(pullFromQueue, 300000);
         }
     });
@@ -150,7 +154,7 @@ function verifyAll(listName, users, actionCallback) {
                     }
                     uI++;
                 }
-                else if (typeof uLst[uI] === 'undefined' || typeof uLst[uI].emails === 'undefined' || (typeof cLst[cI] !== 'undefined' && uLst[uI].email > cLst[cI].email)) {
+                else if (typeof uLst[uI] === 'undefined' || typeof uLst[uI].email === 'undefined' || (typeof cLst[cI] !== 'undefined' && uLst[uI].email > cLst[cI].email)) {
                     if (typeof uLst[uI] === 'undefined' || uLst[uI].active === true) {
                         pushToQueue('deleteEmail', listName, cLst[cI].email, null, function (err, res) {});
                     }
@@ -183,8 +187,40 @@ function deleteFromQueue(receiptHandle) {
 }
 
 
-var server = app.listen(3002, function () {
-    var host = server.address().address;
-    var port = server.address().port;
-    console.log('SQS/Sendgrid server listening at http://%s:%s', host, port);
-});
+if (typeof process.env.AWS_ACCESS_KEY_ID === 'undefined') {
+    console.log('Missing AWS Access Key');
+    return;
+}
+else if (typeof process.env.AWS_SECRET_ACCESS_KEY === 'undefined') {
+    console.log('Missing AWS Secret Access Key');
+    return;
+}
+else if (typeof process.env.AWS_SQS_REGION === 'undefined') {
+    console.log('Missing AWS Region');
+    return;
+}
+else if (typeof process.env.AWS_QUEUE_NAME === 'undefined') {
+    console.log('Missing AWS Queue Name');
+    return;
+}
+else if (typeof process.env.SENDGRID_USERNAME === 'undefined') {
+    console.log('Missing Sendgrid Username');
+    return;
+}
+else if (typeof process.env.SENDGRID_PASSWORD === 'undefined') {
+    console.log('Missing Sendgrid Password');
+    return;
+}
+else {
+    var server = app.listen(3002, function () {
+        var host = server.address().address;
+        var port = server.address().port;
+        console.log('SQS/Sendgrid server listening at http://%s:%s', host, port);
+        sqs.initializeSQS(function(err, result) {
+            if (err) {
+                return;
+            }
+            pullFromQueue();
+        });
+    });
+}
