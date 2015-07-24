@@ -8,7 +8,7 @@ app.get('/', function (req, res) {
     res.send('SQS/Sendgrid Server');
 });
 
-app.get('/initialize', function(req, res) {
+app.get('/init', function(req, res) {
     sqs.initializeSQS(function(err, result) {
         pullFromQueue();
         res.send(JSON.stringify(result, null, 3));
