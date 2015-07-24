@@ -172,32 +172,32 @@ describe('Sendgrid Testing', function() {
     
     describe("test deleteEmail", function() {
         it("valid request successful", function(done) {
-            sendgrid.deleteEmail(testList, testEmail1, testName1, function(err, res) {
+            sendgrid.deleteEmail(testList, testEmail1, function(err, res) {
                 expect(res).toBe(delete_success);
                 done();
             });
         });
         
         it("invalid listName shows error", function(done) {
-            sendgrid.deleteEmail(badList, testEmail1, testName1, function(err, res) {
+            sendgrid.deleteEmail(badList, testEmail1, function(err, res) {
                 expect(res).toBe(list_name_error);
                 done();
             });
         });
         it("invalid email shows unsuccessful remove", function(done) {
-            sendgrid.deleteEmail(testList, badEmail, testName1, function(err, res) {
+            sendgrid.deleteEmail(testList, badEmail, function(err, res) {
                 expect(res).toBe(delete_failed);
                 done();
             });
         });
         it("nonexistent email, valid call shows unsuccessful remove", function(done) {
-            sendgrid.deleteEmail(testList, testEmail1, testName1, function(err, res) {
+            sendgrid.deleteEmail(testList, testEmail1, function(err, res) {
                 expect(res).toBe(delete_failed);
                 done();
             });
         });
         it("existing email, valid call shows successful remove", function(done) {
-            sendgrid.deleteEmail(testList, testEmail2, testName1, function(err, res) {
+            sendgrid.deleteEmail(testList, testEmail2, function(err, res) {
                 expect(res).toBe(delete_success);
                 done();
             });
@@ -240,7 +240,7 @@ describe('Sendgrid Testing', function() {
             });
         });
         it("removed first, valid call shows one element in array", function(done) {
-            sendgrid.deleteEmail(testList, testEmail1, testName1, function(err, res) {
+            sendgrid.deleteEmail(testList, testEmail1, function(err, res) {
                 expect(res).toBe(delete_sucess);
                 sendgrid.listEmails(testList, function(err, res) {
                     expect(res).toBe(good_list_call_res2);
@@ -249,7 +249,7 @@ describe('Sendgrid Testing', function() {
             });
         });
         it("removed second, valid call shows no elements in array", function(done) {
-            sendgrid.deleteEmail(testList, testEmail2, testName1, function(err, res) {
+            sendgrid.deleteEmail(testList, testEmail2, function(err, res) {
                 expect(res).toBe(delete_sucess);
                 sendgrid.listEmails(testList, function(err, res) {
                     expect(res).toBe(empty_list_call_res);

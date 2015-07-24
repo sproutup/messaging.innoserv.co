@@ -18,7 +18,6 @@ function initializeSQS(callback) {
         }
         else {
             sqsUrl = res.QueueUrl;
-            console.log('SQS: Successful initialization call');
             callback(null, res);
         }
     });
@@ -34,8 +33,9 @@ function pushSQS(message, callback) {
             console.log(err);
             return callback(err, null);
         }
-        console.log('SQS: Successful push call');
-        return callback(null, res);
+        else {
+            return callback(null, res);
+        }
     });
 };
 
@@ -49,12 +49,7 @@ function pullSQS(vt, callback) {
             console.log(err);
             return callback(err, null);
         }
-        else if (res.Messages) {
-            console.log('SQS: Successful receive call');
-            return callback(null, res);
-        }
         else {
-            console.log('SQS: Unsuccessul receive call');
             return callback(null, res);
         }
     });
@@ -71,7 +66,6 @@ function deleteSQS(receiptHandle, callback) {
                 return callback(err, null);
             }
             else {
-                console.log('SQS: Successful delete call');
                 return callback(null, res);
             }
         });

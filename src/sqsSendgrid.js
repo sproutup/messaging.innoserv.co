@@ -8,7 +8,7 @@ app.get('/', function (req, res) {
     res.send('SQS/Sendgrid Server');
 });
 
-app.get('/initialize', function(req, res) {
+app.get('/init', function(req, res) {
     sqs.initializeSQS(function(err, result) {
         pullFromQueue();
         res.send(JSON.stringify(result, null, 3));
@@ -39,35 +39,34 @@ function pushToQueue(methodName, param1, param2, param3, callback) {
 
 function pullFromQueue() {
     sqs.pullSQS(undefined, function(recErr, recRes) {
-        var timeout = 5000;
         if(recErr) {
-            // Could not pull from queue
+            setTimeout(pullFromQueue, 300000);
         }
         // Perform function with message, delete if done with message
-        // Deleting any time there is a message currently
         else if (recRes.Messages) {
             var message = recRes.Messages[0];
-            checkMethod(message, function(err, res) {
+            performAction(message, function(err, res) {
                 if (err) {
                     // Unsuccessful sendgrid call, not deleting message
                 }
                 else {
-                    // Successful sendgrid call, deleting message
                     deleteFromQueue(message.ReceiptHandle);
                 }
+                setTimeout(pullFromQueue, 0);
             });
-            timeout = 1000;
         }
         else {
-            //Unsuccessful receive call/nothing to receive
+            //Unsuccessful receive call or nothing to receive
+            setTimeout(pullFromQueue, 300000);
         }
-        
-        setTimeout(pullFromQueue, timeout);
     });
 }
 
 
-function checkMethod(message, sendgridCallback) {
+function performAction(message, sendgridCallback) {
+    var badMessage = JSON.stringify({
+        methodName: 'invalid'
+    });
     var messageBody = JSON.parse(message.Body);
     var method = messageBody.methodName;
     var param1 = messageBody.param1;
@@ -78,31 +77,55 @@ function checkMethod(message, sendgridCallback) {
             if (typeof param2 !== 'undefined') {
                 sendgrid.addList(param1, param2, sendgridCallback);
             }
-            else { checkMethod('invalid'); }
+            else {
+                message.Body = badMessage;
+                performAction(message, sendgridCallback);
+            }
             break;
         case 'addEmail':
             if (typeof param3 !== 'undefined') {
                 sendgrid.addEmail(param1, param2, param3, sendgridCallback);
             }
-            else { checkMethod('invalid'); }
+            else {
+                message.Body = badMessage;
+                performAction(message, sendgridCallback);
+            }
             break;
         case 'deleteEmail':
-            if (typeof param3 !== 'undefined') {
-                sendgrid.deleteEmail(param1, param2, param3, sendgridCallback);
+            if (typeof param2 !== 'undefined') {
+                sendgrid.deleteEmail(param1, param2, sendgridCallback);
             }
-            else { checkMethod('invalid'); }
+            else {
+                message.Body = badMessage;
+                performAction(message, sendgridCallback);
+            }
             break;
         case 'listEmails':
             if (typeof param1 !== 'undefined') {
                 sendgrid.listEmails(param1, sendgridCallback);
             }
-            else { checkMethod('invalid'); }
+            else {
+                message.Body = badMessage;
+                performAction(message, sendgridCallback);
+            }
             break;
         case 'deleteList':
             if (typeof param1 !== 'undefined') {
                 sendgrid.deleteList(param1, sendgridCallback);
             }
-            else { checkMethod('invalid'); }
+            else {
+                message.Body = badMessage;
+                performAction(message, sendgridCallback);
+            }
+            break;
+        case 'verifyAll':
+            if (typeof param2 !== 'undefined') {
+                verifyAll(param1, param2, sendgridCallback);
+            }
+            else {
+                message.Body = badMessage;
+                performAction(message, sendgridCallback);
+            }
             break;
         default:
             //Incorrectly formatted message
@@ -111,11 +134,47 @@ function checkMethod(message, sendgridCallback) {
     }
 }
 
+function verifyAll(listName, users, actionCallback) {
+    sendgrid.listEmails(listName, function(err, res) {
+        if (res.search(listName) == -1) {
+            var cLst = JSON.parse(res);
+            var uLst = JSON.parse(users);
+            uLst = uLst.sort(function(a, b) { return (a["email"] > b["email"]) ? 1 : ((a["email"] < b["email"]) ? -1 : 0); });
+            cLst = cLst.sort(function(a, b) { return (a["email"] > b["email"]) ? 1 : ((a["email"] < b["email"]) ? -1 : 0); });
+            var cI = 0;
+            var uI = 0;
+            while (uI < uLst.length || cI < cLst.length) {
+                if (typeof cLst[cI] === 'undefined' || (typeof uLst[uI] !== 'undefined' && uLst[uI].email < cLst[cI].email)) {
+                    if (uLst[uI].active === true) {
+                        pushToQueue('addEmail', listName, uLst[uI].email, uLst[uI].name, function (err, res) {});
+                    }
+                    uI++;
+                }
+                else if (typeof uLst[uI] === 'undefined' || typeof uLst[uI].emails === 'undefined' || (typeof cLst[cI] !== 'undefined' && uLst[uI].email > cLst[cI].email)) {
+                    if (typeof uLst[uI] === 'undefined' || uLst[uI].active === true) {
+                        pushToQueue('deleteEmail', listName, cLst[cI].email, null, function (err, res) {});
+                    }
+                    cI++;
+                }
+                else {
+                    if (uLst[uI].active === false) {
+                        pushToQueue('deleteEmail', listName, uLst[uI].email, null, function (err, res) {});
+                    }
+                    cI++;
+                    uI++;
+                }
+            }
+            actionCallback(null, "Verified");
+        }
+        actionCallback("Could not get list, verify", null);
+    });
+}
+
 function deleteFromQueue(receiptHandle) {
     sqs.deleteSQS(receiptHandle, function(err, res) {
         if (err) {
             //Could not successfully delete
-            setTimeout(deleteFromQueue(receiptHandle), 5000);
+            //setTimeout(deleteFromQueue(receiptHandle), 30000);
         }
         else {
             //Successfully deleted message from queue
@@ -127,5 +186,5 @@ function deleteFromQueue(receiptHandle) {
 var server = app.listen(3002, function () {
     var host = server.address().address;
     var port = server.address().port;
-    console.log('Example app listening at http://%s:%s', host, port);
+    console.log('SQS/Sendgrid server listening at http://%s:%s', host, port);
 });
