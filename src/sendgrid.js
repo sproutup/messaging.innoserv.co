@@ -82,7 +82,7 @@ function addEmail(listName, email, name, callback) {
                 console.log('Sendgrid: Successfully added ' + email + ' to list ' + listName);
             }
             else if (body == '{"inserted": 0}') {
-                console.log('Sendgrid: ' + email + ' already in list ' + listName);
+                console.log('Sendgrid: ' + email + ' already in list ' + listName, "or invalid");
             }
             else {
                 console.log(body);
