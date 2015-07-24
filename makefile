@@ -40,18 +40,10 @@ start:
 	docker start $(application_name)
 
 run:
-	docker run -d -p 3000:3000 --name $(application_name) --env-file local-env.list $(application_name)
+	docker run -d -p 3002:3002 --name $(application_name) --env-file local-env.list $(application_name)
 
 delete: init
 	docker rm $(application_name)
-
-local:
-	AWS_ACCESS_KEY_ID=AKIAJM5X5NV444LJEUSA \
-	AWS_SECRET_ACCESS_KEY=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 \
-	AWS_SQS_REGION=us-east-1 \
-	AWS_QUEUE_NAME=testSQS \
-	SENDGRID_USERNAME=sproutup \
-	SENDGRID_PASSWORD=1nter$Tellar
 
 node:
 	AWS_ACCESS_KEY_ID=AKIAJM5X5NV444LJEUSA \
