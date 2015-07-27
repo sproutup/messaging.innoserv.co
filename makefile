@@ -13,7 +13,7 @@ master:
 	$(eval environment_name := master)
 
 deploy: init
-	eb deploy $(environment_name)
+	eb deploy $(application_name)-$(environment_name)
 
 init:
 	eb init -r $(region) -p $(platform) -k $(keypair) $(environment_name)
