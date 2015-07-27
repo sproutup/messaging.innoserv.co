@@ -1,5 +1,3 @@
-var express = require('express');
-var app = express();
 var request = require('request');
 
 var username = process.env.SENDGRID_USERNAME;
