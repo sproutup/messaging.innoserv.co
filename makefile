@@ -7,13 +7,13 @@ configuration = messaging
 domain = sproutup-co
 
 
-all: deploy
+all: node
 
 master:
 	$(eval environment_name := master)
 
 deploy: init
-	eb deploy
+	eb deploy $(environment_name)
 
 init:
 	eb init -r $(region) -p $(platform) -k $(keypair) $(environment_name)
