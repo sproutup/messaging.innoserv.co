@@ -17,19 +17,24 @@ app.get('/pushToSendgrid', function(req, res) {
     });
 });
 
-function pushToQueue(methodName, param1, param2, param3, callback) {
+function getMessageBody(methodName, param1, param2, param3) {
     var message = {};
-    if (typeof methodName !== 'undefined') { 
+    if (typeof methodName !== 'undefined') {
         message.methodName = methodName;
-        if (typeof param1 !== 'undefined') { 
+        if (typeof param1 !== 'undefined') {
             message.param1 = param1;
-            if (typeof param2 !== 'undefined') { 
-                message.param2 = param2; 
+            if (typeof param2 !== 'undefined') {
+                message.param2 = param2;
                 if (typeof param3 !== 'undefined') { message.param3 = param3; }
             }
         }
     }
     else { message.methodName = 'noMethod'; }
+    return message;
+}
+
+function pushToQueue(methodName, param1, param2, param3, callback) {
+    message = getMessageBody(methodName, param1, param2, param3);
     sqs.pushSQS(JSON.stringify(message), callback);
 };
 
@@ -71,7 +76,11 @@ function performAction(message, sendgridCallback) {
     var badMessage = JSON.stringify({
         methodName: 'invalid'
     });
-    var messageBody = JSON.parse(message.Body);
+    var messageBody;
+    if (typeof message.Body !== 'undefined') {
+        messageBody = JSON.parse(message.Body);
+    }
+    else { messageBody = message }
     var method = messageBody.methodName;
     var param1 = messageBody.param1;
     var param2 = messageBody.param2;
@@ -124,7 +133,7 @@ function performAction(message, sendgridCallback) {
             break;
         case 'verifyAll':
             if (typeof param2 !== 'undefined') {
-                verifyAll(param1, param2, sendgridCallback);
+                bruteInternalVerify(param1, param2, sendgridCallback);
             }
             else {
                 message.Body = badMessage;
@@ -134,8 +143,47 @@ function performAction(message, sendgridCallback) {
         default:
             //Incorrectly formatted message
             //Deleting bad message
-            deleteFromQueue(message.ReceiptHandle);
+            if (typeof message.ReceiptHandle !== 'undefined') {
+                deleteFromQueue(message.ReceiptHandle);
+            }
     }
+}
+
+function actionFromArray(arrayName, arrayIndex, callback) {
+    performAction(arrayName[arrayIndex], function(err, res) {
+        if (err) {
+            callback(err, null);
+        }
+        else {
+            arrayIndex += 1;
+            if (arrayIndex === arrayName.length) {
+                callback(null, "Success");
+            }
+            else {
+                actionFromArray(arrayName, arrayIndex, callback);
+            }
+        }
+    });
+}
+
+function bruteInternalVerify(listName, users, actionCallback) {
+    var callArray = [];
+    var uLst = JSON.parse(users);
+
+    var message = getMessageBody('deleteList', listName);
+    callArray.push(message);
+
+    message = getMessageBody('addList', listName, "Name");
+    callArray.push(message);
+
+    for (var i = 0; i < uLst.length; i++) {
+        if (typeof uLst[i].email !== 'undefined' && uLst[i].active) {
+            message = getMessageBody('addEmail', listName, uLst[i].email, uLst[i].name);
+            callArray.push(message);
+        }
+    }
+
+    actionFromArray(callArray, 0, actionCallback);
 }
 
 function verifyAll(listName, users, actionCallback) {
